@@ -114,7 +114,6 @@ ORDER BY id
 
     let response;
     try {
-        // https://simbad.u-strasbg.fr/Pages/guide/sim-url.htx
         response = await fetch('https://simbad.cds.unistra.fr/simbad/sim-tap/sync', {
             method: 'POST',
             body: params
@@ -125,6 +124,7 @@ ORDER BY id
             throw new Error(`HTTP error! status: ${response.status}: ${errorText}`);
         }
     } catch (error) {
+        // Re-throw the error with a more specific message
         throw new Error(`Failed to fetch data from SIMBAD: ${error.message}`);
     }
 
