@@ -212,4 +212,27 @@ describe('checkStarsVariability', () => {
         );
         await expect(checkStarsVariability(["ANY_STAR"])).rejects.toThrow('Unexpected data format from SIMBAD: {"some_unexpected_field":[]}');
     });
+
+    test('should not match partial words', async () => {
+        const mockResponse = {
+            "metadata": [
+                { "name": "id" }, { "name": "otype" }, { "name": "other_types" }, { "name": "doi" }, { "name": "bibcode" }, { "name": "year" }, { "name": "Journal" }, { "name": "page" }, { "name": "Title" }, { "name": "keywords" }, { "name": "Abstract" }
+            ],
+            "data": [
+                [
+                    "TEST_STAR_DEBRIS", "Star", "*|Star", null, "2022yCat...1.2025S", 2022, "yCat", 1, "A paper about a star", "{\"debris disks\"}", "Abstract."
+                ]
+            ]
+        };
+        global.fetch.mockImplementationOnce(() =>
+            Promise.resolve({
+                json: () => Promise.resolve(mockResponse),
+                ok: true,
+            })
+        );
+        const results = await checkStarsVariability(["TEST_STAR_DEBRIS"]);
+        const starResult = results["TEST_STAR_DEBRIS"];
+        const ebMatches = starResult.filter(m => m.match_text === 'EB');
+        expect(ebMatches).toHaveLength(0);
+    });
 });

@@ -69,7 +69,8 @@ const detailedKeywords = {
 
 function getSurroundingWords(text, keyword, contextLength = 5) {
     const words = text.split(/\s+/);
-    const keywordIndex = words.findIndex(word => word.toLowerCase().includes(keyword.toLowerCase()));
+    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+    const keywordIndex = words.findIndex(word => regex.test(word));
 
     if (keywordIndex === -1) {
         return null;
@@ -221,7 +222,9 @@ ORDER BY id
             const checkAndAddKeywordMatch = (text, source, priority) => {
                 if (!text) return;
                 for (const keyword of allKeywords) {
-                    if (text.toLowerCase().includes(keyword.toLowerCase())) {
+                    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+                    const match = text.match(regex);
+                    if (match) {
                         const surrounding = getSurroundingWords(text, keyword);
                         matches.push({
                             source: source,
