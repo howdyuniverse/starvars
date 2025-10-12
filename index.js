@@ -129,73 +129,100 @@ ORDER BY id
         return obj;
     });
 
+    const aggregatedData = {};
     for (const row of rows) {
         const starId = row.id;
-        const matches = [];
+        if (!aggregatedData[starId]) {
+            aggregatedData[starId] = {
+                id: starId,
+                otype: row.otype,
+                other_types: row.other_types,
+                references: []
+            };
+        }
+        aggregatedData[starId].references.push({
+            doi: row.doi,
+            bibcode: row.bibcode,
+            year: row.year,
+            Journal: row.Journal,
+            page: row.page,
+            Title: row.Title,
+            keywords: row.keywords,
+            Abstract: row.Abstract
+        });
+    }
 
-        // 1. Otype check
-        if (simbadOTypes[row.otype]) {
+    for (const starId in aggregatedData) {
+        if (results[starId]) { // Check if the star was actually requested
+            const star = aggregatedData[starId];
+            const matches = [];
+
+        const otypeKey = Object.keys(simbadOTypes).find(key => key.toLowerCase() === star.otype.toLowerCase());
+        if (otypeKey) {
             matches.push({
                 source: "otype",
-                match_text: row.otype,
-                description: simbadOTypes[row.otype],
+                match_text: star.otype,
+                description: simbadOTypes[otypeKey],
                 priority: 1
             });
         }
-        const otherTypes = row.other_types.split('|');
+
+        const otherTypes = star.other_types.split('|');
         for (const otype of otherTypes) {
-            if (simbadOTypes[otype]) {
+            const otherOtypeKey = Object.keys(simbadOTypes).find(key => key.toLowerCase() === otype.toLowerCase());
+            if (otherOtypeKey) {
                 const match = {
                     source: "other_types",
                     match_text: otype,
-                    description: simbadOTypes[otype],
-                    priority: 1
+                    description: simbadOTypes[otherOtypeKey],
+                    priority: 2
                 };
-                if (!matches.some(m => m.match_text === otype)) {
+                if (!matches.some(m => m.match_text.toLowerCase() === otype.toLowerCase())) {
                     matches.push(match);
                 }
             }
         }
 
-        // 2. Bibcode check
-        if (variabilityBibcodes.includes(row.bibcode)) {
-            matches.push({
-                source: "bibcode",
-                match_text: row.bibcode,
-                title: row.Title,
-                priority: 2
-            });
-        }
-
-        // 3. Keyword check
-        const allKeywords = [
-            ...Object.keys(generalKeywords),
-            ...Object.values(detailedKeywords).flat()
-        ];
-
-        const checkAndAddKeywordMatch = (text, source, priority) => {
-            if (!text) return;
-            for (const keyword of allKeywords) {
-                if (text.toLowerCase().includes(keyword.toLowerCase())) {
-                    const surrounding = getSurroundingWords(text, keyword);
-                    matches.push({
-                        source: source,
-                        match_text: keyword,
-                        context: surrounding,
-                        bibcode: row.bibcode,
-                        title: row.Title,
-                        priority: priority
-                    });
-                }
+        for (const ref of star.references) {
+            // 2. Bibcode check
+            if (variabilityBibcodes.includes(ref.bibcode)) {
+                matches.push({
+                    source: "bibcode",
+                    match_text: ref.bibcode,
+                    title: ref.Title,
+                    priority: 3
+                });
             }
-        };
 
-        checkAndAddKeywordMatch(row.Title, "title", 3);
-        checkAndAddKeywordMatch(row.Abstract, "abstract", 4);
-        checkAndAddKeywordMatch(row.keywords, "keywords", 3);
+            // 3. Keyword check
+            const allKeywords = [
+                ...Object.keys(generalKeywords),
+                ...Object.values(detailedKeywords).flat()
+            ];
 
+            const checkAndAddKeywordMatch = (text, source, priority) => {
+                if (!text) return;
+                for (const keyword of allKeywords) {
+                    if (text.toLowerCase().includes(keyword.toLowerCase())) {
+                        const surrounding = getSurroundingWords(text, keyword);
+                        matches.push({
+                            source: source,
+                            match_text: keyword,
+                            context: surrounding,
+                            bibcode: ref.bibcode,
+                            title: ref.Title,
+                            priority: priority
+                        });
+                    }
+                }
+            };
 
+            checkAndAddKeywordMatch(ref.Title, "title", 4);
+            checkAndAddKeywordMatch(ref.keywords, "keywords", 5);
+            checkAndAddKeywordMatch(ref.Abstract, "abstract", 6);
+        }
         results[starId].push(...matches);
+        }
     }
 
     for (const starId in results) {
@@ -208,10 +235,4 @@ ORDER BY id
     return results;
 }
 
-// Example usage:
-document.addEventListener('DOMContentLoaded', async () => {
-    const starsToTest = ['TIC 121421968', 'TIC 441734144'];
-    console.log(`Checking variability for: ${starsToTest.join(', ')}`);
-    const variabilityResults = await checkStarsVariability(starsToTest);
-    console.log(variabilityResults);
-});
+export { checkStarsVariability, simbadOTypes, variabilityBibcodes, generalKeywords, detailedKeywords, getSurroundingWords };
