@@ -1,4 +1,3 @@
-
 const simbadOTypes = {
     "V*": "Загальна змінна зоря",
     "EB*": "Подвійна затемнювана зоря",
@@ -113,11 +112,27 @@ ORDER BY id
         QUERY: adql_query
     });
 
-    const response = await fetch('https://simbad.cds.unistra.fr/simbad/sim-tap/sync', {
-        method: 'POST',
-        body: params
-    });
+    let response;
+    try {
+        // https://simbad.u-strasbg.fr/Pages/guide/sim-url.htx
+        response = await fetch('https://simbad.cds.unistra.fr/simbad/sim-tap/sync', {
+            method: 'POST',
+            body: params
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}: ${errorText}`);
+        }
+    } catch (error) {
+        throw new Error(`Failed to fetch data from SIMBAD: ${error.message}`);
+    }
+
     const data = await response.json();
+
+    if (!data || !Array.isArray(data.data)) {
+        throw new Error(`Unexpected data format from SIMBAD: ${JSON.stringify(data)}`);
+    }
 
     const results = {};
     starIds.forEach(id => {
