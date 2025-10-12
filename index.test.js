@@ -65,7 +65,7 @@ describe('getContext', () => {
 
 const mockSimbadResponse = {
     "metadata": [
-        { "name": "id" }, { "name": "otype" }, { "name": "other_types" }, { "name": "doi" }, { "name": "bibcode" }, { "name": "year" }, { "name": "Journal" }, { "name": "page" }, { "name": "Title" }, { "name": "keywords" }, { "name": "Abstract" }
+        { "name": "id" }, { "name": "otype" }, { "name": "other_types" }, { "name": "doi" }, { "name": "bibcode" }, { "name": "year" }, { "name": "Journal" }, { "name": "page" }, { "name": "title" }, { "name": "keywords" }, { "name": "abstract" }
     ],
     "data": [
         [
@@ -165,7 +165,7 @@ describe('checkStarsVariability', () => {
         const results = await checkStarsVariability(["TEST_STAR_BIBCODE"]);
         const starResult = results["TEST_STAR_BIBCODE"];
         expect(starResult).toEqual(expect.arrayContaining([
-            expect.objectContaining({ source: 'bibcode', match_text: '2021ApJ...919..131H', priority: 3 })
+            expect.objectContaining({ source: 'bibcode', match_text: '2021ApJ...919..131H', priority: 3, doi: null })
         ]));
     });
 
@@ -173,7 +173,7 @@ describe('checkStarsVariability', () => {
         const results = await checkStarsVariability(["TEST_STAR_TITLE_KW"]);
         const starResult = results["TEST_STAR_TITLE_KW"];
         expect(starResult).toEqual(expect.arrayContaining([
-            expect.objectContaining({ source: 'title', match_text: 'Variable star', priority: 4 })
+            expect.objectContaining({ source: 'title', match_text: 'Variable star', priority: 4, doi: null })
         ]));
     });
 
@@ -181,7 +181,7 @@ describe('checkStarsVariability', () => {
         const results = await checkStarsVariability(["TEST_STAR_ABSTRACT_KW"]);
         const starResult = results["TEST_STAR_ABSTRACT_KW"];
         expect(starResult).toEqual(expect.arrayContaining([
-            expect.objectContaining({ source: 'abstract', match_text: 'Pulsating star', priority: 6 })
+            expect.objectContaining({ source: 'abstract', match_text: 'Pulsating star', priority: 6, doi: null })
         ]));
     });
 
@@ -189,7 +189,7 @@ describe('checkStarsVariability', () => {
         const results = await checkStarsVariability(["TEST_STAR_KEYWORDS_KW"]);
         const starResult = results["TEST_STAR_KEYWORDS_KW"];
         expect(starResult).toEqual(expect.arrayContaining([
-            expect.objectContaining({ source: 'keywords', match_text: 'Variability', priority: 5 })
+            expect.objectContaining({ source: 'keywords', match_text: 'Variability', priority: 5, doi: null })
         ]));
     });
 
@@ -314,7 +314,7 @@ describe('checkStarsVariability', () => {
         const results = await checkStarsVariability(["TEST_STAR_KEYWORDS_KW_COMPLEX"]);
         const starResult = results["TEST_STAR_KEYWORDS_KW_COMPLEX"];
         expect(starResult).toEqual(expect.arrayContaining([
-            expect.objectContaining({ source: 'keywords', match_text: 'Variability', priority: 5 })
+            expect.objectContaining({ source: 'keywords', match_text: 'Variability', priority: 5, doi: null })
         ]));
     });
 
@@ -322,10 +322,10 @@ describe('checkStarsVariability', () => {
         const results = await checkStarsVariability(["TEST_STAR_MULTIPLE_KEYWORDS"]);
         const starResult = results["TEST_STAR_MULTIPLE_KEYWORDS"];
         expect(starResult).toEqual(expect.arrayContaining([
-            expect.objectContaining({ source: 'title', match_text: 'Variable star' }),
-            expect.objectContaining({ source: 'title', match_text: 'Pulsating star' }),
-            expect.objectContaining({ source: 'abstract', match_text: 'RR Lyrae' }),
-            expect.objectContaining({ source: 'abstract', match_text: 'Cepheid' })
+            expect.objectContaining({ source: 'title', match_text: 'Variable star', doi: null }),
+            expect.objectContaining({ source: 'title', match_text: 'Pulsating star', doi: null }),
+            expect.objectContaining({ source: 'abstract', match_text: 'RR Lyrae', doi: null }),
+            expect.objectContaining({ source: 'abstract', match_text: 'Cepheid', doi: null })
         ]));
     });
 
@@ -333,7 +333,7 @@ describe('checkStarsVariability', () => {
         const results = await checkStarsVariability(["TEST_STAR_KEYWORD_AT_START"]);
         const starResult = results["TEST_STAR_KEYWORD_AT_START"];
         expect(starResult).toEqual(expect.arrayContaining([
-            expect.objectContaining({ source: 'title', match_text: 'Variable star' })
+            expect.objectContaining({ source: 'title', match_text: 'Variable star', doi: null })
         ]));
     });
 
@@ -341,7 +341,7 @@ describe('checkStarsVariability', () => {
         const results = await checkStarsVariability(["TEST_STAR_KEYWORD_AT_END"]);
         const starResult = results["TEST_STAR_KEYWORD_AT_END"];
         expect(starResult).toEqual(expect.arrayContaining([
-            expect.objectContaining({ source: 'title', match_text: 'Variable star' })
+            expect.objectContaining({ source: 'title', match_text: 'Variable star', doi: null })
         ]));
     });
 
@@ -349,7 +349,7 @@ describe('checkStarsVariability', () => {
         const results = await checkStarsVariability(["TEST_STAR_OTYPE"]);
         const starResult = results["TEST_STAR_OTYPE"];
         expect(starResult).toEqual(expect.arrayContaining([
-            expect.objectContaining({ source: 'abstract', match_text: 'Eclipsing Binaries' })
+            expect.objectContaining({ source: 'abstract', match_text: 'Eclipsing Binaries', doi: null })
         ]));
     });
 });

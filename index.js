@@ -88,6 +88,26 @@ function getContext(text, match, contextLength = 50) {
     return context;
 }
 
+function checkAndAddKeywordMatch(text, source, priority, ref, allKeywords, matches) {
+    if (!text) return;
+    for (const keyword of allKeywords) {
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        const match = text.match(regex);
+        if (match) {
+            const surrounding = getContext(text, match);
+            matches.push({
+                source: source,
+                match_text: keyword,
+                context: surrounding,
+                bibcode: ref.bibcode,
+                title: ref.title,
+                priority: priority,
+                doi: ref.doi
+            });
+        }
+    }
+}
+
 async function checkStarsVariability(starIds) {
     const adql_query = `
 SELECT
@@ -99,9 +119,9 @@ SELECT
     ref."year",
     ref.Journal,
     ref.page,
-    ref.Title,
+    ref.Title as title,
     array_agg(keywords.keyword) as keywords,
-    ref.Abstract
+    ref.Abstract as abstract
 FROM ident
 JOIN basic ON basic.oid = ident.oidref
 JOIN has_ref ON has_ref.oidref = ident.oidref
@@ -172,9 +192,9 @@ ORDER BY id
             year: row.year,
             Journal: row.Journal,
             page: row.page,
-            Title: row.Title,
+            title: row.title,
             keywords: row.keywords,
-            Abstract: row.Abstract
+            abstract: row.abstract
         });
     }
 
@@ -215,8 +235,9 @@ ORDER BY id
                 matches.push({
                     source: "bibcode",
                     match_text: ref.bibcode,
-                    title: ref.Title,
-                    priority: 3
+                    title: ref.title,
+                    priority: 3,
+                    doi: ref.doi
                 });
             }
 
@@ -226,28 +247,9 @@ ORDER BY id
                 ...Object.values(detailedKeywords).flat()
             ];
 
-            const checkAndAddKeywordMatch = (text, source, priority) => {
-                if (!text) return;
-                for (const keyword of allKeywords) {
-                    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
-                    const match = text.match(regex);
-                    if (match) {
-                        const surrounding = getContext(text, match);
-                        matches.push({
-                            source: source,
-                            match_text: keyword,
-                            context: surrounding,
-                            bibcode: ref.bibcode,
-                            title: ref.Title,
-                            priority: priority
-                        });
-                    }
-                }
-            };
-
-            checkAndAddKeywordMatch(ref.Title, "title", 4);
-            checkAndAddKeywordMatch(ref.keywords, "keywords", 5);
-            checkAndAddKeywordMatch(ref.Abstract, "abstract", 6);
+            checkAndAddKeywordMatch(ref.title, "title", 4, ref, allKeywords, matches);
+            checkAndAddKeywordMatch(ref.keywords, "keywords", 5, ref, allKeywords, matches);
+            checkAndAddKeywordMatch(ref.abstract, "abstract", 6, ref, allKeywords, matches);
         }
         results[starId].push(...matches);
         }
@@ -263,4 +265,4 @@ ORDER BY id
     return results;
 }
 
-export { checkStarsVariability, simbadOTypes, variabilityBibcodes, generalKeywords, detailedKeywords, getContext };
+export { checkStarsVariability, simbadOTypes, variabilityBibcodes, generalKeywords, detailedKeywords, getContext, checkAndAddKeywordMatch };
