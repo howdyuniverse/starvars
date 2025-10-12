@@ -1,5 +1,67 @@
 import {jest, describe, test, expect} from '@jest/globals';
-import { checkStarsVariability } from './index.js';
+import { checkStarsVariability, getContext } from './index.js';
+
+describe('getContext', () => {
+    test('should return the context of a keyword', () => {
+        const text = 'This is a long text about a Pulsating star.';
+        const keyword = 'Pulsating star';
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        const match = text.match(regex);
+        const context = getContext(text, match, 10);
+        expect(context).toBe('...t about a Pulsating star.');
+    });
+
+    test('should return the context of a keyword with a different length', () => {
+        const text = 'This is a long text about a Pulsating star.';
+        const keyword = 'Pulsating star';
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        const match = text.match(regex);
+        const context = getContext(text, match, 20);
+        expect(context).toBe('...a long text about a Pulsating star.');
+    });
+
+    test('should handle keyword at the beginning of the text', () => {
+        const text = 'Pulsating star is a type of star.';
+        const keyword = 'Pulsating star';
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        const match = text.match(regex);
+        const context = getContext(text, match, 10);
+        expect(context).toBe('Pulsating star is a type...');
+    });
+
+    test('should handle keyword at the end of the text', () => {
+        const text = 'This is a text about a Pulsating star';
+        const keyword = 'Pulsating star';
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        const match = text.match(regex);
+        const context = getContext(text, match, 10);
+        expect(context).toBe('...t about a Pulsating star');
+    });
+
+    test('should handle context length larger than available text before', () => {
+        const text = 'A Pulsating star is a star.';
+        const keyword = 'Pulsating star';
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        const match = text.match(regex);
+        const context = getContext(text, match, 10);
+        expect(context).toBe('A Pulsating star is a star...');
+    });
+
+    test('should handle context length larger than available text after', () => {
+        const text = 'This is a Pulsating star.';
+        const keyword = 'Pulsating star';
+        const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+        const match = text.match(regex);
+        const context = getContext(text, match, 20);
+        expect(context).toBe('This is a Pulsating star.');
+    });
+
+    test('should return null if match is null', () => {
+        const text = 'This is a test.';
+        const context = getContext(text, null, 10);
+        expect(context).toBeNull();
+    });
+});
 
 const mockSimbadResponse = {
     "metadata": [
@@ -23,6 +85,18 @@ const mockSimbadResponse = {
         ],
         [
             "TEST_STAR_NO_VARIABILITY", "Star", "*|Star", null, "2022yCat...1.2025S", 2022, "yCat", 1, "A normal paper", "{}", "A normal abstract."
+        ],
+        [
+            "TEST_STAR_KEYWORDS_KW_COMPLEX", "Star", "*|Star", null, "2022yCat...1.2025S", 2022, "yCat", 1, "A paper about a star", "{\"Variability\",surveys,catalogs,\"methods: data analysis\"}", "Abstract."
+        ],
+        [
+            "TEST_STAR_MULTIPLE_KEYWORDS", "Star", "*|Star", null, "2022yCat...1.2025S", 2022, "yCat", 1, "A paper about a Variable star and a Pulsating star", "{}", "This abstract mentions a RR Lyrae and a Cepheid."
+        ],
+        [
+            "TEST_STAR_KEYWORD_AT_START", "Star", "*|Star", null, "2022yCat...1.2025S", 2022, "yCat", 1, "Variable star at the beginning", "{}", "Abstract."
+        ],
+        [
+            "TEST_STAR_KEYWORD_AT_END", "Star", "*|Star", null, "2022yCat...1.2025S", 2022, "yCat", 1, "Title ends with Variable star", "{}", "Abstract."
         ]
     ]
 };
@@ -234,5 +308,48 @@ describe('checkStarsVariability', () => {
         const starResult = results["TEST_STAR_DEBRIS"];
         const ebMatches = starResult.filter(m => m.match_text === 'EB');
         expect(ebMatches).toHaveLength(0);
+    });
+
+    test('should identify variability by complex keyword in keywords', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_KEYWORDS_KW_COMPLEX"]);
+        const starResult = results["TEST_STAR_KEYWORDS_KW_COMPLEX"];
+        expect(starResult).toEqual(expect.arrayContaining([
+            expect.objectContaining({ source: 'keywords', match_text: 'Variability', priority: 5 })
+        ]));
+    });
+
+    test('should identify multiple keywords in title and abstract', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_MULTIPLE_KEYWORDS"]);
+        const starResult = results["TEST_STAR_MULTIPLE_KEYWORDS"];
+        expect(starResult).toEqual(expect.arrayContaining([
+            expect.objectContaining({ source: 'title', match_text: 'Variable star' }),
+            expect.objectContaining({ source: 'title', match_text: 'Pulsating star' }),
+            expect.objectContaining({ source: 'abstract', match_text: 'RR Lyrae' }),
+            expect.objectContaining({ source: 'abstract', match_text: 'Cepheid' })
+        ]));
+    });
+
+    test('should identify keyword at the beginning of the title', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_KEYWORD_AT_START"]);
+        const starResult = results["TEST_STAR_KEYWORD_AT_START"];
+        expect(starResult).toEqual(expect.arrayContaining([
+            expect.objectContaining({ source: 'title', match_text: 'Variable star' })
+        ]));
+    });
+
+    test('should identify keyword at the end of the title', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_KEYWORD_AT_END"]);
+        const starResult = results["TEST_STAR_KEYWORD_AT_END"];
+        expect(starResult).toEqual(expect.arrayContaining([
+            expect.objectContaining({ source: 'title', match_text: 'Variable star' })
+        ]));
+    });
+
+    test('should identify "eclipsing binaries" keyword in abstract', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_OTYPE"]);
+        const starResult = results["TEST_STAR_OTYPE"];
+        expect(starResult).toEqual(expect.arrayContaining([
+            expect.objectContaining({ source: 'abstract', match_text: 'Eclipsing Binaries' })
+        ]));
     });
 });
