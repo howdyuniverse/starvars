@@ -1,5 +1,4 @@
-
-import {jest, describe, test, expect, beforeAll} from '@jest/globals';
+import {jest, describe, test, expect} from '@jest/globals';
 import { checkStarsVariability } from './index.js';
 
 const mockSimbadResponse = {
@@ -67,74 +66,79 @@ const mockResponseBibcodeLowercase = {
 global.fetch = jest.fn(() =>
   Promise.resolve({
     json: () => Promise.resolve(mockSimbadResponse),
+    ok: true,
   })
 );
 
 describe('checkStarsVariability', () => {
-    let results;
-
-    beforeAll(async () => {
-        results = await checkStarsVariability(["TEST_STAR_OTYPE", "TEST_STAR_BIBCODE", "TEST_STAR_TITLE_KW", "TEST_STAR_ABSTRACT_KW", "TEST_STAR_KEYWORDS_KW", "TEST_STAR_NO_VARIABILITY", "NOT_FOUND_STAR"]);
-    });
-
-    test('should identify variability by otype', () => {
+    test('should identify variability by otype', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_OTYPE"]);
         const starResult = results["TEST_STAR_OTYPE"];
         expect(starResult).toEqual(expect.arrayContaining([
             expect.objectContaining({ source: 'otype', match_text: 'EB*' })
         ]));
     });
 
-    test('should identify variability by other_types', () => {
+    test('should identify variability by other_types', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_OTYPE"]);
         const starResult = results["TEST_STAR_OTYPE"];
         expect(starResult).toEqual(expect.arrayContaining([
             expect.objectContaining({ source: 'other_types', match_text: 'V*', priority: 2 })
         ]));
     });
 
-    test('should identify variability by bibcode', () => {
+    test('should identify variability by bibcode', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_BIBCODE"]);
         const starResult = results["TEST_STAR_BIBCODE"];
         expect(starResult).toEqual(expect.arrayContaining([
             expect.objectContaining({ source: 'bibcode', match_text: '2021ApJ...919..131H', priority: 3 })
         ]));
     });
 
-    test('should identify variability by keyword in title', () => {
+    test('should identify variability by keyword in title', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_TITLE_KW"]);
         const starResult = results["TEST_STAR_TITLE_KW"];
         expect(starResult).toEqual(expect.arrayContaining([
             expect.objectContaining({ source: 'title', match_text: 'Variable star', priority: 4 })
         ]));
     });
 
-    test('should identify variability by keyword in abstract', () => {
+    test('should identify variability by keyword in abstract', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_ABSTRACT_KW"]);
         const starResult = results["TEST_STAR_ABSTRACT_KW"];
         expect(starResult).toEqual(expect.arrayContaining([
             expect.objectContaining({ source: 'abstract', match_text: 'Pulsating star', priority: 6 })
         ]));
     });
 
-    test('should identify variability by keyword in keywords', () => {
+    test('should identify variability by keyword in keywords', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_KEYWORDS_KW"]);
         const starResult = results["TEST_STAR_KEYWORDS_KW"];
         expect(starResult).toEqual(expect.arrayContaining([
             expect.objectContaining({ source: 'keywords', match_text: 'Variability', priority: 5 })
         ]));
     });
 
-    test('should not identify variability for a normal star', () => {
+    test('should not identify variability for a normal star', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_NO_VARIABILITY"]);
         const starResult = results["TEST_STAR_NO_VARIABILITY"];
         expect(starResult).toHaveLength(0);
     });
 
-    test('should return results sorted by priority', () => {
+    test('should return results sorted by priority', async () => {
+        const results = await checkStarsVariability(["TEST_STAR_OTYPE"]);
         const starResult = results["TEST_STAR_OTYPE"];
         expect(starResult[0].priority).toBe(1);
     });
 
-    test('should return an empty array for a star not found in the response', () => {
+    test('should return an empty array for a star not found in the response', async () => {
+        const results = await checkStarsVariability(["NOT_FOUND_STAR"]);
         const starResult = results["NOT_FOUND_STAR"];
         expect(starResult).toEqual([]);
     });
 
-    test('should use POST request', () => {
+    test('should use POST request', async () => {
+        await checkStarsVariability(["ANY_STAR"]);
         expect(global.fetch).toHaveBeenCalledWith(
             'https://simbad.cds.unistra.fr/simbad/sim-tap/sync',
             expect.objectContaining({
@@ -147,10 +151,11 @@ describe('checkStarsVariability', () => {
         global.fetch.mockImplementationOnce(() =>
             Promise.resolve({
                 json: () => Promise.resolve(mockSimbadResponseWithDuplicates),
+                ok: true,
             })
         );
-        const duplicateResults = await checkStarsVariability(["TEST_STAR_DUPLICATE"]);
-        const starResult = duplicateResults["TEST_STAR_DUPLICATE"];
+        const results = await checkStarsVariability(["TEST_STAR_DUPLICATE"]);
+        const starResult = results["TEST_STAR_DUPLICATE"];
         const otypeMatches = starResult.filter(m => m.source === 'otype');
         expect(otypeMatches).toHaveLength(1);
     });
@@ -159,10 +164,11 @@ describe('checkStarsVariability', () => {
         global.fetch.mockImplementationOnce(() =>
             Promise.resolve({
                 json: () => Promise.resolve(mockResponseOtypeLowercase),
+                ok: true,
             })
         );
-        const caseResults = await checkStarsVariability(["TEST_STAR_OTYPE_LOWERCASE"]);
-        const starResult = caseResults["TEST_STAR_OTYPE_LOWERCASE"];
+        const results = await checkStarsVariability(["TEST_STAR_OTYPE_LOWERCASE"]);
+        const starResult = results["TEST_STAR_OTYPE_LOWERCASE"];
         expect(starResult).toEqual(expect.arrayContaining([
             expect.objectContaining({ source: 'otype', match_text: 'eb*' })
         ]));
@@ -172,11 +178,61 @@ describe('checkStarsVariability', () => {
         global.fetch.mockImplementationOnce(() =>
             Promise.resolve({
                 json: () => Promise.resolve(mockResponseBibcodeLowercase),
+                ok: true,
             })
         );
-        const caseResults = await checkStarsVariability(["TEST_STAR_BIBCODE_LOWERCASE"]);
-        const starResult = caseResults["TEST_STAR_BIBCODE_LOWERCASE"];
+        const results = await checkStarsVariability(["TEST_STAR_BIBCODE_LOWERCASE"]);
+        const starResult = results["TEST_STAR_BIBCODE_LOWERCASE"];
         const bibcodeMatches = starResult.filter(m => m.source === 'bibcode');
         expect(bibcodeMatches).toHaveLength(0);
+    });
+
+    test('should throw an error if the fetch call fails', async () => {
+        global.fetch.mockImplementationOnce(() => Promise.reject(new Error('Network error')));
+        await expect(checkStarsVariability(["ANY_STAR"])).rejects.toThrow('Failed to fetch data from SIMBAD: Network error');
+    });
+
+    test('should throw an error if the response is not ok', async () => {
+        global.fetch.mockImplementationOnce(() =>
+            Promise.resolve({
+                ok: false,
+                status: 500,
+                text: () => Promise.resolve('Internal Server Error')
+            })
+        );
+        await expect(checkStarsVariability(["ANY_STAR"])).rejects.toThrow('HTTP error! status: 500: Internal Server Error');
+    });
+
+    test('should throw an error for unexpected data format', async () => {
+        global.fetch.mockImplementationOnce(() =>
+            Promise.resolve({
+                ok: true,
+                json: () => Promise.resolve({ some_unexpected_field: [] }),
+            })
+        );
+        await expect(checkStarsVariability(["ANY_STAR"])).rejects.toThrow('Unexpected data format from SIMBAD: {"some_unexpected_field":[]}');
+    });
+
+    test('should not match partial words', async () => {
+        const mockResponse = {
+            "metadata": [
+                { "name": "id" }, { "name": "otype" }, { "name": "other_types" }, { "name": "doi" }, { "name": "bibcode" }, { "name": "year" }, { "name": "Journal" }, { "name": "page" }, { "name": "Title" }, { "name": "keywords" }, { "name": "Abstract" }
+            ],
+            "data": [
+                [
+                    "TEST_STAR_DEBRIS", "Star", "*|Star", null, "2022yCat...1.2025S", 2022, "yCat", 1, "A paper about a star", "{\"debris disks\"}", "Abstract."
+                ]
+            ]
+        };
+        global.fetch.mockImplementationOnce(() =>
+            Promise.resolve({
+                json: () => Promise.resolve(mockResponse),
+                ok: true,
+            })
+        );
+        const results = await checkStarsVariability(["TEST_STAR_DEBRIS"]);
+        const starResult = results["TEST_STAR_DEBRIS"];
+        const ebMatches = starResult.filter(m => m.match_text === 'EB');
+        expect(ebMatches).toHaveLength(0);
     });
 });
