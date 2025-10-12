@@ -67,18 +67,25 @@ const detailedKeywords = {
 };
 
 
-function getSurroundingWords(text, keyword, contextLength = 5) {
-    const words = text.split(/\s+/);
-    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
-    const keywordIndex = words.findIndex(word => regex.test(word));
-
-    if (keywordIndex === -1) {
+function getContext(text, match, contextLength = 50) {
+    if (!match) {
         return null;
     }
+    const index = match.index;
+    const keyword = match[0];
+    const start = Math.max(0, index - contextLength);
+    const end = Math.min(text.length, index + keyword.length + contextLength);
 
-    const start = Math.max(0, keywordIndex - contextLength);
-    const end = Math.min(words.length, keywordIndex + contextLength + 1);
-    return words.slice(start, end).join(" ");
+    let context = text.substring(start, end);
+
+    if (start > 0) {
+        context = '...' + context;
+    }
+    if (end < text.length) {
+        context = context + '...';
+    }
+
+    return context;
 }
 
 async function checkStarsVariability(starIds) {
@@ -225,7 +232,7 @@ ORDER BY id
                     const regex = new RegExp(`\\b${keyword}\\b`, 'i');
                     const match = text.match(regex);
                     if (match) {
-                        const surrounding = getSurroundingWords(text, keyword);
+                        const surrounding = getContext(text, match);
                         matches.push({
                             source: source,
                             match_text: keyword,
@@ -256,4 +263,4 @@ ORDER BY id
     return results;
 }
 
-export { checkStarsVariability, simbadOTypes, variabilityBibcodes, generalKeywords, detailedKeywords, getSurroundingWords };
+export { checkStarsVariability, simbadOTypes, variabilityBibcodes, generalKeywords, detailedKeywords, getContext };
