@@ -134,6 +134,15 @@ describe('checkStarsVariability', () => {
         expect(starResult).toEqual([]);
     });
 
+    test('should use POST request', () => {
+        expect(global.fetch).toHaveBeenCalledWith(
+            'https://simbad.cds.unistra.fr/simbad/sim-tap/sync',
+            expect.objectContaining({
+                method: 'POST'
+            })
+        );
+    });
+
     test('should not have duplicate otype matches for the same star', async () => {
         global.fetch.mockImplementationOnce(() =>
             Promise.resolve({

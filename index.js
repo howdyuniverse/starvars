@@ -113,7 +113,10 @@ ORDER BY id
         QUERY: adql_query
     });
 
-    const response = await fetch(`https://simbad.cds.unistra.fr/simbad/sim-tap/sync?${params.toString()}`);
+    const response = await fetch('https://simbad.cds.unistra.fr/simbad/sim-tap/sync', {
+        method: 'POST',
+        body: params
+    });
     const data = await response.json();
 
     const results = {};
