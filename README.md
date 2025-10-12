@@ -19,7 +19,7 @@ The library provides a function, `checkStarsVariability`, that takes a list of s
 Simply include the `index.js` file in your HTML page:
 
 ```html
-<script src="index.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/howdyuniverse/starvars@v1.0.0/index.js" integrity="sha512-qVT1dS7l6hgbmSe/5zWqIeG4WVA3/yEAMVwneOLpYwcDeBdL2fumQfGtgQZPNfSPqSJGdTsHHMpizAz5YwWvdg==" crossorigin="anonymous" referrerpolicy="no-referrer" type="module"></script>
 ```
 
 Then you can use the `checkStarsVariability` function in your own scripts.
@@ -47,6 +47,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   "priority": 1
 }
 ```
+
+### Returned Object Structure
+
+The `checkStarsVariability` function returns an object where each key is a star ID from the input array. The value for each key is an array of "match" objects, sorted by priority. Each match object contains information about a potential variability indicator.
+
+The structure of a match object varies depending on its `source`:
+
+- **`source: "otype"`** or **`"other_types"`**:
+  - `source`: `"otype"` or `"other_types"`
+  - `match_text`: The matched object type (e.g., `"EB*"`).
+  - `description`: A description of the object type.
+  - `priority`: A numerical priority (1 for `otype`, 2 for `other_types`).
+
+- **`source: "bibcode"`**:
+  - `source`: `"bibcode"`
+  - `match_text`: The bibliographic code of the reference.
+  - `title`: The title of the reference.
+  - `priority`: A numerical priority (3).
+
+- **`source: "title"`, `"keywords"`, or `"abstract"`**:
+  - `source`: `"title"`, `"keywords"`, or `"abstract"`
+  - `match_text`: The keyword that was matched.
+  - `context`: The surrounding text where the keyword was found.
+  - `bibcode`: The bibcode of the reference.
+  - `title`: The title of the reference.
+  - `priority`: A numerical priority (4 for `title`, 5 for `keywords`, 6 for `abstract`).
 
 ## Running Tests
 
