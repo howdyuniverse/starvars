@@ -352,4 +352,35 @@ describe('checkStarsVariability', () => {
             expect.objectContaining({ source: 'abstract', match_text: 'Eclipsing Binaries', doi: null })
         ]));
     });
+
+    test('should use default timeout of 60000ms', async () => {
+        await checkStarsVariability(["ANY_STAR"]);
+        expect(global.fetch).toHaveBeenCalledWith(
+            'https://simbad.cds.unistra.fr/simbad/sim-tap/sync',
+            expect.objectContaining({
+                method: 'POST',
+                signal: expect.any(AbortSignal)
+            })
+        );
+    });
+
+    test('should accept custom timeout parameter', async () => {
+        const customTimeout = 30000;
+        await checkStarsVariability(["ANY_STAR"], customTimeout);
+        expect(global.fetch).toHaveBeenCalledWith(
+            'https://simbad.cds.unistra.fr/simbad/sim-tap/sync',
+            expect.objectContaining({
+                method: 'POST',
+                signal: expect.any(AbortSignal)
+            })
+        );
+    });
+
+    test('should throw an error when request times out', async () => {
+        const timeoutError = new Error('This operation was aborted');
+        timeoutError.name = 'TimeoutError';
+        global.fetch.mockImplementationOnce(() => Promise.reject(timeoutError));
+
+        await expect(checkStarsVariability(["ANY_STAR"], 1)).rejects.toThrow('Failed to fetch data from SIMBAD');
+    });
 });
