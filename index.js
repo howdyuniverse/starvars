@@ -108,7 +108,7 @@ function checkAndAddKeywordMatch(text, source, priority, ref, allKeywords, match
     }
 }
 
-async function checkStarsVariability(starIds) {
+async function checkStarsVariability(starIds, timeout = 60000) {
     const adql_query = `
 SELECT
     ident.id,
@@ -144,7 +144,8 @@ ORDER BY id
     try {
         response = await fetch('https://simbad.cds.unistra.fr/simbad/sim-tap/sync', {
             method: 'POST',
-            body: params
+            body: params,
+            signal: AbortSignal.timeout(timeout)
         });
 
         if (!response.ok) {
